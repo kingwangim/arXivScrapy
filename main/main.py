@@ -8,19 +8,21 @@ from googletrans import Translator
 from time import strftime
 
 # 爬虫
+
+
 def crawl_arxiv(keyword, url):
     # 当前日期
-    now=datetime.datetime.now()
+    now = datetime.datetime.now()
 
     # 发送请求，获取响应
     response = requests.get(url)
     response.encoding = response.apparent_encoding
     html = response.text.split("\n")
-    
+
     # 获取 arxiv_id
     arXiv_ids = get_arxiv_ids_from_html(html)
 
-    # 获取 arxiv 信息 
+    # 获取 arxiv 信息
     papers = arxiv.Search(id_list=arXiv_ids)
     papers_list = []
     papers_temp = []
@@ -34,11 +36,11 @@ def crawl_arxiv(keyword, url):
         for keyword in keywords:
             if keyword in abstract.lower():
                 paper_info = {
-                    "time" : str(paper.updated.year)+"-"+str(paper.updated.month).zfill(2)+"-"+str(paper.updated.day).zfill(2),
-                    "title" : paper.title,
-                    "link" : paper.links[1],
-                    "authors" : ', '.join([author.name for author in paper.authors]),
-                    "abstract" : abstract
+                    "time": str(paper.updated.year)+"-"+str(paper.updated.month).zfill(2)+"-"+str(paper.updated.day).zfill(2),
+                    "title": paper.title,
+                    "link": paper.links[1],
+                    "authors": ', '.join([author.name for author in paper.authors]),
+                    "abstract": abstract
                 }
                 if paper_info["title"] not in papers_temp:
                     papers_list.append(paper_info)
@@ -47,13 +49,15 @@ def crawl_arxiv(keyword, url):
                         print(">>> Today Update: " + paper_info["title"])
     papers_list.sort(key=lambda k: (k.get('time', 0)))
 
-    # 调用 Google Translate 
+    # 调用 Google Translate
     papers_list = google_translator(papers_list)
 
     # 保存到 markdown 文件
     save_markdown(papers_list)
 
 # response.text 中提取 arxiv_id
+
+
 def get_arxiv_ids_from_html(html):
     arxiv_ids = []
     for item in html:
@@ -64,22 +68,28 @@ def get_arxiv_ids_from_html(html):
     return arxiv_ids
 
 # 保存成 markdown 文件
+
+
 def save_markdown(papers_list):
     filename = str(datetime.date.today())+'.md'
-    print ("Saving: "+filename)
-    f = open(filename, "wb")
+    print("Saving: "+filename)
+    f = open("2023/"+filename, "wb")
     for paper in papers_list:
-        md = '## [{}]({})\n\n{}\n\n*{}*\n\n{}\n\n{}\n\n{}\n\n'.format(paper['title'],paper['title_cn'],
-                                                          paper['time'], paper['link'], paper['authors'], paper['abstract'], paper['abstract_cn'])
+        md = '## [{}]({})\n\n{}\n\n*{}*\n\n{}\n\n{}\n\n{}\n\n'.format(paper['title'], paper['title_cn'],
+                                                                      paper['time'], paper['link'], paper['authors'], paper['abstract'], paper['abstract_cn'])
         f.write('{}\n'.format(md).encode())
     f.close()
 
 # 调用 Google 翻译
+
+
 def google_translator(papers_list):
     translator = Translator()
     for paper in papers_list:
-        paper["title_cn"] = translator.translate(paper["title"], dest='zh-cn').text
-        paper["abstract_cn"] = translator.translate(paper["abstract"], dest='zh-cn').text
+        paper["title_cn"] = translator.translate(
+            paper["title"], dest='zh-cn').text
+        paper["abstract_cn"] = translator.translate(
+            paper["abstract"], dest='zh-cn').text
     return papers_list
 
 
@@ -87,7 +97,7 @@ if __name__ == "__main__":
     # 关键字和爬取链接
     keywords = ["differential privacy", "local differential privacy"]
     url = "https://arxiv.org/list/cs.CR/pastweek?show=100"
-    
+
     print("Seaching: ", keywords)
     # 主方法入口
     crawl_arxiv(keywords, url)
